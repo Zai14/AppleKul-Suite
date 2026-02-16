@@ -23,6 +23,21 @@ const Layout: React.FC = () => {
         return;
       }
 
+      // Check if script is already present in the DOM
+      const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+      if (existingScript) {
+        // Script exists but maps might not be loaded yet, wait for it
+        const checkMapsLoaded = () => {
+          if ((window as any).google?.maps) {
+            setMapsLoaded(true);
+          } else {
+            setTimeout(checkMapsLoaded, 100);
+          }
+        };
+        checkMapsLoaded();
+        return;
+      }
+
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,drawing`;
       script.async = true;
