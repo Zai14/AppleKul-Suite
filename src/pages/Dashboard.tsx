@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, TreePine, TriangleAlert as AlertTriangle, Cloud, TrendingUp, Calendar, UserCircle, CheckCircle2, ExternalLink, Navigation } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import type { User, Field } from '../types';
 
+interface OutletContext {
+  mapsLoaded: boolean;
+}
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { mapsLoaded } = useOutletContext<OutletContext>();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const [mapsLoaded, setMapsLoaded] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [fields, setFields] = useState<Field[]>([]);
   const [user, setUser] = useState<User>({
@@ -39,29 +43,6 @@ const Dashboard: React.FC = () => {
   };
 
   const profileCompletion = calculateProfileCompletion(user);
-
-  useEffect(() => {
-    const loadGoogleMaps = () => {
-      const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-      if (!apiKey) {
-        return;
-      }
-
-      if ((window as any).google?.maps) {
-        setMapsLoaded(true);
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,drawing`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => setMapsLoaded(true);
-      document.head.appendChild(script);
-    };
-
-    loadGoogleMaps();
-  }, []);
 
   useEffect(() => {
     if (!mapsLoaded || !mapRef.current || fields.length === 0) {
