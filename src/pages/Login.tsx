@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
@@ -19,7 +19,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-green-50 to-green-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -78,9 +78,15 @@ const Login: React.FC = () => {
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-3">
           <p className="text-sm text-gray-600">
             Demo credentials: any email and password
+          </p>
+          <p className="text-sm text-gray-600">
+            Don't have an account?{' '}
+            <Link to="/signup" className="text-green-600 hover:text-green-700 font-medium">
+              Sign Up
+            </Link>
           </p>
         </div>
       </Card>
