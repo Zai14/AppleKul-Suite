@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { kml as kmlToGeoJSON } from '@tmcw/togeojson';
-import { Plus, Search, ListFilter as Filter, MapPin, X } from 'lucide-react';
+import { Plus, Search, ListFilter as Filter, X } from 'lucide-react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import type { Field } from '../types';
@@ -266,8 +266,8 @@ const Fields = () => {
         const handleUpdateField = async () => {
           if (!session?.user || !editingFieldId) return;
           setFieldsError(null);
-          let fieldLat = formData.latitude ?? 31.5204;
-          let fieldLng = formData.longitude ?? 74.3587;
+          let fieldLat = formData.latitude ?? 33.7782;
+          let fieldLng = formData.longitude ?? 76.5762;
           if (formData.boundaryPath && formData.boundaryPath.length > 0) {
             let lat = 0, lng = 0;
             formData.boundaryPath.forEach(point => {
@@ -572,7 +572,7 @@ const Fields = () => {
     const boundaryCenter = formData.boundaryPath[0];
     const center = boundaryCenter
       ? { lat: boundaryCenter.lat, lng: boundaryCenter.lng }
-      : { lat: 31.5204, lng: 74.3587 };
+      : { lat: 33.7782, lng: 76.5762 };
 
     const map = new googleMaps.maps.Map(mapContainerRef.current, {
       center,
@@ -724,6 +724,7 @@ const Fields = () => {
     }
 
     treeMarkersRef.current.forEach((marker) => marker.setMap(null));
+    let infoWindow: any = null;
     treeMarkersRef.current = formData.treeTags.map((tag) => {
       const color = getVarietyColor(tag.variety);
       const isSelected = selectedTreeId === tag.id;
@@ -744,11 +745,22 @@ const Fields = () => {
         },
       });
 
-      // Add click listener to pan to tree location
+      // Add click listener to pan to tree location and show details
       marker.addListener('click', () => {
         mapInstanceRef.current?.panTo({ lat: tag.latitude, lng: tag.longitude });
         mapInstanceRef.current?.setZoom(18);
         setSelectedTreeId(tag.id);
+        if (infoWindow) {
+          infoWindow.close();
+        }
+        infoWindow = new googleMaps.maps.InfoWindow({
+          content: `<div style='min-width:140px'>
+            <div><strong>${tag.name || 'Tree'}</strong></div>
+            <div>Row: ${tag.rowNumber || '-'}</div>
+            <div>Variety: ${tag.variety || '-'}</div>
+          </div>`
+        });
+        infoWindow.open(mapInstanceRef.current, marker);
       });
 
       return marker;
@@ -1071,7 +1083,6 @@ const Fields = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">{field.name}</h3>
                   <div className="flex items-center text-sm text-gray-500 mt-1">
-                    <MapPin className="w-4 h-4 mr-1" />
                     {field.location}
                   </div>
                 </div>
@@ -1118,7 +1129,7 @@ const Fields = () => {
       {!fieldsLoading && filteredFields.length === 0 && (
         <Card className="p-12 text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MapPin className="w-8 h-8 text-gray-400" />
+
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No fields found</h3>
           <p className="text-gray-500 mb-4">

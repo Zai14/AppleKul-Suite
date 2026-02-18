@@ -327,6 +327,7 @@ const Dashboard: React.FC = () => {
       });
     });
 
+    let treeInfoWindow: any = null;
     treeTags.forEach((tag) => {
       if (!tag.latitude || !tag.longitude) {
         return;
@@ -352,6 +353,17 @@ const Dashboard: React.FC = () => {
 
       marker.addListener('click', () => {
         handleViewTree(tag);
+        if (treeInfoWindow) {
+          treeInfoWindow.close();
+        }
+        let variety = tag.variety || '-';
+        treeInfoWindow = new googleMaps.maps.InfoWindow({
+          content: `<div style='min-width:140px'>
+            <div><strong>${tag.name || 'Tree'}</strong></div>
+            <div>Variety: ${variety}</div>
+          </div>`
+        });
+        treeInfoWindow.open(map, marker);
       });
 
       treeMarkersRef.current.push(marker);
@@ -500,7 +512,25 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Orchard Map Overview - First Card */}
+
+      {/* Stats Cards - Now Above Map */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {stats.map((stat, index) => (
+          <Card key={index} className="p-6">
+            <div className="flex items-center">
+              <div className={`p-3 rounded-lg ${stat.bgColor}`}> 
+                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Orchard Map Overview - Card */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -665,23 +695,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </Card>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="p-6">
-            <div className="flex items-center">
-              <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       {/* Profile Completion Card */}
       {profileCompletion < 100 && (
