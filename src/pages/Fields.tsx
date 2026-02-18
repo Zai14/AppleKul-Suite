@@ -657,7 +657,7 @@ const Fields = () => {
 
       polygonRef.current = event.overlay;
       const path = event.overlay.getPath();
-      const points = path.getArray().map((point: any) => ({
+      const points: { lat: number; lng: number }[] = path.getArray().map((point: any) => ({
         lat: point.lat(),
         lng: point.lng(),
       }));
@@ -665,10 +665,65 @@ const Fields = () => {
       const areaSqm = googleMaps.maps.geometry.spherical.computeArea(path);
       const areaKanal = areaSqm / KANAL_SQM;
 
+      // --- Automatic tree tagging logic ---
+      function pointInPolygon(point: { lat: number; lng: number }, polygon: { lat: number; lng: number }[]) {
+        // Ray-casting algorithm
+        let x = point.lng, y = point.lat;
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+          let xi = polygon[i].lng, yi = polygon[i].lat;
+          let xj = polygon[j].lng, yj = polygon[j].lat;
+          let intersect = ((yi > y) !== (yj > y)) &&
+            (x < (xj - xi) * (y - yi) / (yj - yi + 0.0000001) + xi);
+          if (intersect) inside = !inside;
+        }
+        return inside;
+      }
+
+      let autoTreeTags: any[] = [];
+      const rows = (formData.rows && formData.rows.length > 0) ? formData.rows : [];
+      if (rows.length > 0 && points.length > 2) {
+        // Get bounding box
+        let minLat = Math.min(...points.map((p) => p.lat));
+        let maxLat = Math.max(...points.map((p) => p.lat));
+        let minLng = Math.min(...points.map((p) => p.lng));
+        let maxLng = Math.max(...points.map((p) => p.lng));
+        // For each row, distribute trees evenly between minLng and maxLng, and rows between minLat and maxLat
+        for (let r = 0; r < rows.length; r++) {
+          const row = rows[r];
+          const nTrees = row.varieties.reduce((sum, v) => sum + (parseInt(v.trees) || 0), 0);
+          // For each variety in the row
+          let treeIdx = 0;
+          for (let vIdx = 0; vIdx < row.varieties.length; vIdx++) {
+            const v = row.varieties[vIdx];
+            const n = parseInt(v.trees) || 0;
+            for (let t = 0; t < n; t++) {
+              // Evenly space along the row (lat axis)
+              const lat = minLat + (maxLat - minLat) * (r + 0.5) / rows.length;
+              // Evenly space along the row (lng axis)
+              const lng = minLng + (maxLng - minLng) * (treeIdx + 0.5) / nTrees;
+              const pt = { lat, lng };
+              if (pointInPolygon(pt, points)) {
+                autoTreeTags.push({
+                  id: `${Date.now()}-${Math.random()}`,
+                  name: '',
+                  variety: v.variety,
+                  rowNumber: row.rowId,
+                  latitude: lat,
+                  longitude: lng,
+                });
+              }
+              treeIdx++;
+            }
+          }
+        }
+      }
+
       setFormData((prev) => ({
         ...prev,
         boundaryPath: points,
         mapAreaKanal: Number(areaKanal.toFixed(2)),
+        treeTags: autoTreeTags.length > 0 ? autoTreeTags : prev.treeTags,
       }));
 
       // Add click listener to polygon for tree tagging
@@ -1329,7 +1384,7 @@ const Fields = () => {
                           <span role="img" aria-label="apple">🍏</span> Orchard Summary
                         </h3>
                         <div className="overflow-x-auto">
-                          <table className="w-full min-w-[250px] border-separate border-spacing-y-1">
+                          <table className="w-full min-w-62.5 border-separate border-spacing-y-1">
                             <thead>
                               <tr className="bg-green-100">
                                 <th className="px-3 py-2 text-left rounded-l-lg text-green-900">Variety</th>
