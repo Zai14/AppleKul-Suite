@@ -26,65 +26,178 @@ const Dashboard: React.FC = () => {
   const [forecast, setForecast] = useState<any[]>([]);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
+  const getWeatherIcon = (code: number) => {
+  if ([0].includes(code)) return "☀️";
+  if ([1, 2].includes(code)) return "🌤️";
+  if ([3].includes(code)) return "☁️";
+  if ([45, 48].includes(code)) return "🌫️";
+  if ([51, 53, 55].includes(code)) return "🌦️";
+  if ([61, 63, 65].includes(code)) return "🌧️";
+  if ([71, 73, 75].includes(code)) return "❄️";
+  if ([80, 81, 82].includes(code)) return "🌧️";
+  if ([95].includes(code)) return "⛈️";
+  return "🌡️";
+};
+// 🌧️ Heavy rain alert (>=10mm)
+// thresholds (you can tune these)
+const WIND_THRESHOLD = 15; // km/h
+const HIGH_TEMP = 32;     // °C
+const MARGINAL_RAIN = 40; // %
+
+const isHeavyRain = (day?: any) => {
+  if (!day) return false;
+  return (day.precipitationProb ?? 0) >= 70;
+};
+
+const isFrostRisk = (day?: any) => {
+  if (!day) return false;
+  return (day.tempMin ?? 100) <= 2;
+};
+
+// 🟥🟧🟩 Spray Window (RAG)
+const getSprayWindowStatus = (day?: any) => {
+  if (!day) return "UNKNOWN";
+
+  const rainProb = day.precipitationProb ?? 0;
+  const wind = day.windSpeed ?? 0; // make sure you map this from API
+  const maxTemp = day.tempMax ?? 0;
+
+  // ❌ RED: unsafe
+  if (rainProb >= 70 || wind > WIND_THRESHOLD) {
+    return "RED";
+  }
+
+  // ⚠️ AMBER: marginal
+  if (maxTemp >= HIGH_TEMP || rainProb >= MARGINAL_RAIN) {
+    return "AMBER";
+  }
+
+  // ✅ GREEN: safe
+  return "GREEN";
+};
+
+const isSpraySafeDay = (day?: any) => {
+  return getSprayWindowStatus(day) === "GREEN";
+};
+
+// 💧 Irrigation advice
+const getIrrigationAdvice = () => {
+  if (!Array.isArray(forecast) || forecast.length === 0) return "";
+
+  if (forecast.some(d => d && getSprayWindowStatus(d) === "RED")) {
+    return "🚫 Irrigation not recommended — rainfall or wind expected";
+  }
+
+  const hotDry = forecast.some(
+    d =>
+      d &&
+      (d.tempMax ?? 0) >= HIGH_TEMP &&
+      (d.precipitationProb ?? 0) < 30
+  );
+
+  if (hotDry) {
+    return "💧 Irrigation recommended — hot & dry conditions";
+  }
+
+  return "✅ Moderate irrigation only if soil is dry";
+};
+
+
+const getAnimatedIcon = (code: number) => {
+  if ([0].includes(code)) return "☀️";
+  if ([1, 2].includes(code)) return "🌤️";
+  if ([3].includes(code)) return "☁️";
+  if ([45, 48].includes(code)) return "🌫️";
+  if ([51, 53, 55, 61, 63, 65].includes(code)) return "🌧️";
+  if ([71, 73, 75].includes(code)) return "❄️";
+  if ([95, 96, 99].includes(code)) return "⛈️";
+  return "🌡️";
+};
+const getSprayBadge = (day: any) => {
+  const status = getSprayWindowStatus(day);
+
+  if (status === "RED") {
+    return { text: "Do NOT Spray", color: "bg-red-100 text-red-800" };
+  }
+  if (status === "AMBER") {
+    return { text: "Spray with Caution", color: "bg-yellow-100 text-yellow-800" };
+  }
+  if (status === "GREEN") {
+    return { text: "Safe to Spray", color: "bg-green-100 text-green-800" };
+  }
+
+  return { text: "Unknown", color: "bg-gray-100 text-gray-600" };
+};
+
     // Get user's current location and fetch weather from Open-Meteo
-    useEffect(() => {
-      setWeatherError(null);
-      setWeatherLoading(true);
-      if (!navigator.geolocation) {
-        setWeatherError('Geolocation not supported');
-        setWeatherLoading(false);
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          try {
-            // Fetch current weather and 7-day forecast from Open-Meteo, including all available daily fields
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_hours,rain_sum,showers_sum,snowfall_sum,precipitation_probability_max,uv_index_max,weathercode&forecast_days=7&timezone=auto`;
-            try {
-              const res = await fetch(url);
-              const data = await res.json();
-              setWeather(data.current_weather);
-              // Debug: log the daily data
-              if (!data.daily) {
-                console.error('Open-Meteo: No daily data returned', data);
-              }
-              // Prepare forecast array for next 3 days, include all available daily fields
-              if (data.daily) {
-                const days = data.daily.time.map((date: string, i: number) => ({
-                  date,
-                  tempMax: data.daily.temperature_2m_max?.[i],
-                  tempMin: data.daily.temperature_2m_min?.[i],
-                  precipitation: data.daily.precipitation_sum?.[i],
-                  precipitationHours: data.daily.precipitation_hours?.[i],
-                  rain: data.daily.rain_sum?.[i],
-                  showers: data.daily.showers_sum?.[i],
-                  snowfall: data.daily.snowfall_sum?.[i],
-                  precipitationProb: data.daily.precipitation_probability_max?.[i],
-                  uvIndex: data.daily.uv_index_max?.[i],
-                  weathercode: data.daily.weathercode?.[i],
-                }));
-                setForecast(days);
-              } else {
-                setForecast([]);
-              }
-            } catch (err) {
-              setWeatherError('Failed to fetch weather');
-              console.error('Open-Meteo fetch error:', err);
-            }
-          } catch (e) {
-            setWeatherError('Failed to fetch weather');
-          } finally {
-            setWeatherLoading(false);
-          }
-        },
-        () => {
-          setWeatherError('Unable to get location');
+   useEffect(() => {
+  setWeatherError(null);
+  setWeatherLoading(true);
+
+  if (!navigator.geolocation) {
+    setWeatherError("Geolocation not supported");
+    setWeatherLoading(false);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      try {
+
+        // Request supported daily variables including soil moisture and UV index
+        const url =
+          `https://api.open-meteo.com/v1/forecast` +
+          `?latitude=${lat}` +
+          `&longitude=${lon}` +
+          `&current_weather=true` +
+          `&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,precipitation_sum,precipitation_probability_max,windspeed_10m_max,weathercode,uv_index_max` +
+          `&forecast_days=7` +
+          `&timezone=auto`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        console.log("FULL WEATHER DATA:", data);
+
+        if (!data.current_weather || !data.daily) {
+          setWeatherError("Invalid weather data");
           setWeatherLoading(false);
+          return;
         }
-      );
-    }, []);
+
+        setWeather(data.current_weather);
+
+        const days = data.daily.time.map((date: string, i: number) => ({
+          date,
+          tempMax: data.daily.temperature_2m_max[i],
+          tempMin: data.daily.temperature_2m_min[i],
+          feelsLikeMax: data.daily.apparent_temperature_max ? data.daily.apparent_temperature_max[i] : undefined,
+          precipitation: data.daily.precipitation_sum[i],
+          precipitationProb: data.daily.precipitation_probability_max[i],
+          windSpeed: data.daily.windspeed_10m_max[i],
+          weathercode: data.daily.weathercode[i],
+          uvIndex: data.daily.uv_index_max ? data.daily.uv_index_max[i] : undefined,
+        }));
+
+        setForecast(days);
+      } catch (err) {
+        console.error("Weather fetch error:", err);
+        setWeatherError("Failed to fetch weather");
+      } finally {
+        setWeatherLoading(false);
+      }
+    },
+    () => {
+      setWeatherError("Unable to get location");
+      setWeatherLoading(false);
+    }
+  );
+}, []);
+
+
   const { user, session } = useAuth();
 
   const profileUser: User = user ?? {
@@ -596,7 +709,7 @@ const Dashboard: React.FC = () => {
         ))}
       </div>
 
-      <Card className="p-6">
+      {/* End of Stats Cards Grid */}
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Orchard Map Overview</h2>
@@ -756,63 +869,107 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             )}
-            {/* Weather Forecast Section - moved below map and tagged trees */}
-            <div className="mt-8">
-              <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <Cloud className="w-5 h-5 text-blue-500" /> Weather Forecast
-              </h2>
-              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 shadow-sm">
-                {weatherLoading ? (
-                  <p className="text-sm text-gray-500">Loading weather...</p>
-                ) : weatherError ? (
-                  <p className="text-sm text-red-600">{weatherError}</p>
-                ) : weather ? (
-                  <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
-                    <div className="flex flex-col items-center p-4 bg-blue-100 rounded-lg min-w-30">
-                      <span className="text-4xl font-bold text-blue-700">{weather.temperature}°C</span>
-                      <span className="text-sm text-blue-600">Current Temperature</span>
-                    </div>
-                    {forecast.length > 0 && (
-                      <div className="flex flex-row gap-4">
-                        {forecast.map((day, i) => (
-                          <div key={i} className="flex flex-col items-center p-3 bg-green-50 rounded-lg min-w-27.5 border border-green-100">
-                            <span className="font-semibold text-green-700">{new Date(day.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                            <span className="text-lg font-bold text-green-900">{day.tempMax}° / {day.tempMin}°C</span>
-                            {typeof day.precipitation === 'number' && day.precipitation > 0 && (
-                              <span className="text-xs text-green-700">Precipitation: {day.precipitation} mm</span>
-                            )}
-                            {typeof day.rain === 'number' && day.rain > 0 && (
-                              <span className="text-xs text-blue-700">Rain: {day.rain} mm</span>
-                            )}
-                            {typeof day.showers === 'number' && day.showers > 0 && (
-                              <span className="text-xs text-blue-700">Showers: {day.showers} mm</span>
-                            )}
-                            {typeof day.snowfall === 'number' && day.snowfall > 0 && (
-                              <span className="text-xs text-blue-400">Snowfall: {day.snowfall} mm</span>
-                            )}
-                            {typeof day.precipitationHours === 'number' && day.precipitationHours > 0 && (
-                              <span className="text-xs text-blue-500">Precip Hours: {day.precipitationHours} h</span>
-                            )}
-                            {typeof day.precipitationProb === 'number' && day.precipitationProb > 0 && (
-                              <span className="text-xs text-purple-700">Precip Prob: {day.precipitationProb}%</span>
-                            )}
-                            {typeof day.uvIndex === 'number' && (
-                              <span className="text-xs text-yellow-600">UV Index: {day.uvIndex}</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : null}
+           </div>   {/* ✅ CLOSE flex-col gap-6 wrapper */}
+          </div>
+
+{/* 🌦️ Weather Forecast (7 Days) */}
+{forecast.length > 0 ? (
+  <Card className="p-6 mt-8">
+    <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+      🌤️ 7-Day Weather Forecast
+    </h2>
+
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4 mb-6">
+      {forecast.map((day, i) => {
+        const spray = getSprayBadge(day);
+
+        return (
+          <div
+            key={i}
+            className="flex flex-col items-center p-4 rounded-2xl bg-white shadow hover:shadow-xl hover:scale-105 transition-all"
+          >
+            <span className="text-sm font-semibold text-gray-600">
+              {new Date(day.date).toLocaleDateString(undefined, {
+                weekday: "short",
+              })}
+            </span>
+
+            <span className="text-4xl my-1 animate-pulse">
+              {getAnimatedIcon(day.weathercode)}
+            </span>
+
+            <span className="text-sm font-bold text-gray-900">
+              {day.tempMax}° / {day.tempMin}°
+            </span>
+
+            <span className="text-[11px] text-gray-500">
+              Feels: {day.feelsLikeMax}°
+            </span>
+
+            {typeof day.precipitationProb === "number" && (
+              <div className="w-full mt-2">
+                <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-1.5 bg-blue-500"
+                    style={{ width: `${day.precipitationProb}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-center text-gray-500 mt-1">
+                  {day.precipitationProb}% rain
+                </p>
               </div>
+            )}
+
+            <p className="text-[10px] text-gray-500 mt-1">
+              💨 {day.windSpeed} km/h
+            </p>
+
+
+            <p className="text-[10px] text-gray-500">
+              ☀️ UV: {day.uvIndex ?? "-"}
+            </p>
+
+            <div
+              className={`mt-2 px-2 py-1 text-[10px] rounded-full font-semibold ${spray.color}`}
+            >
+              {spray.text}
             </div>
           </div>
-        </div>
-      </Card>
+        );
+      })}
+    </div>
 
-      {/* Profile Completion Card */}
-      {profileCompletion < 100 && (
+    <div className="text-center p-4 rounded-2xl bg-green-50 border border-green-200 text-green-800 font-semibold shadow animate-pulse mb-4">
+      💧 {getIrrigationAdvice()}
+    </div>
+
+
+    <div className="flex flex-wrap justify-center gap-3">
+      {forecast.some(isHeavyRain) && (
+        <div className="px-4 py-2 rounded-full bg-blue-100 text-blue-900 text-sm font-semibold shadow">
+          🌧️ Heavy rain expected
+        </div>
+      )}
+      {forecast.some(isFrostRisk) && (
+        <div className="px-4 py-2 rounded-full bg-sky-100 text-sky-900 text-sm font-semibold shadow">
+          ❄️ Frost risk for crops
+        </div>
+      )}
+      {forecast.some(isSpraySafeDay) && (
+        <div className="px-4 py-2 rounded-full bg-green-100 text-green-900 text-sm font-semibold shadow">
+          🌿 Spraying-safe day
+        </div>
+      )}
+    </div>
+  </Card>
+  ) : (
+    <p className="text-center text-gray-500 mt-6">No forecast data</p>
+  )}
+
+  {/* Weather Forecast Section */}
+  {/* End of Weather Forecast Card */}
+
+  {profileCompletion < 100 && (
         <Card className="p-6 bg-linear-to-r from-green-50 to-blue-50 border-2 border-green-200">
           <div className="flex items-center justify-between">
             <div className="flex items-start space-x-4 flex-1">
@@ -934,6 +1091,7 @@ const Dashboard: React.FC = () => {
               </div>
             ))}
           </div>
+
         )}
       </Card>
     </div>
