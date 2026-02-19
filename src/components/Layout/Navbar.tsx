@@ -47,10 +47,8 @@ const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, user }) => {
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm"></span>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900">AppleKul Suite</h1>
+            <img src="/logo.png" alt="AppleKul Logo" className="w-20 h-20 object-contain" />
+            <h1 className="text-xl font-bold text-gray-900">AppleKul™ Suite</h1>
           </div>
         </div>
         

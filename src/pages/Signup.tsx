@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { User, Phone, Mail, MapPin, Globe, DollarSign, Lock, Eye, EyeOff } from 'lucide-react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
-import logo2 from '../assets/logo2.png';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -108,12 +107,12 @@ const Signup: React.FC = () => {
       <Card className="w-full max-w-2xl p-8">
         <div className="text-center mb-8">
           <img 
-            src={logo2} 
-            alt="AppleKul Logo" 
+            src="/logo.png" 
+            alt="AppleKul™ Logo" 
             className="w-24 h-24 mx-auto mb-4 object-contain"
           />
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Your Account</h1>
-          <p className="text-gray-600">Join AppleKul Suite to manage your orchard</p>
+          <p className="text-gray-600">Join AppleKul™ Suite to manage your orchard</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -363,12 +362,12 @@ const Signup: React.FC = () => {
             <div className="space-y-4 text-sm text-gray-700">
               <section>
                 <h3 className="font-semibold text-lg mb-2">1. Acceptance of Terms</h3>
-                <p>By creating an account with AppleKul Suite, you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our services.</p>
+                <p>By creating an account with AppleKul™ Suite, you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our services.</p>
               </section>
 
               <section>
                 <h3 className="font-semibold text-lg mb-2">2. Use of Service</h3>
-                <p>AppleKul Suite provides orchard management tools and services. You agree to use the service only for lawful purposes and in accordance with these terms.</p>
+                <p>AppleKul™ Suite provides orchard management tools and services. You agree to use the service only for lawful purposes and in accordance with these terms.</p>
               </section>
 
               <section>
@@ -383,7 +382,7 @@ const Signup: React.FC = () => {
 
               <section>
                 <h3 className="font-semibold text-lg mb-2">5. Intellectual Property</h3>
-                <p>All content, features, and functionality of AppleKul Suite are owned by us and are protected by international copyright, trademark, and other intellectual property laws.</p>
+                <p>All content, features, and functionality of AppleKul™ Suite are owned by us and are protected by international copyright, trademark, and other intellectual property laws.</p>
               </section>
 
               <section>
@@ -393,7 +392,7 @@ const Signup: React.FC = () => {
 
               <section>
                 <h3 className="font-semibold text-lg mb-2">7. Contact Information</h3>
-                <p>For any questions regarding these terms, please contact us at support@applekul.com</p>
+                <p>For any questions regarding these terms, please contact us at apl@applekul.com</p>
               </section>
             </div>
 

@@ -45,10 +45,12 @@ const Login: React.FC = () => {
     <div className="min-h-screen bg-linear-to-br from-green-50 to-green-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-2xl">🍎</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Apple Farm Manager</h1>
+          <img 
+            src="/logo.png" 
+            alt="AppleKul™ Logo" 
+            className="w-20 h-20 mx-auto mb-4 object-contain" 
+          />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">AppleKul™ Suite</h1>
           <p className="text-gray-600">Sign in to manage your farm</p>
         </div>
 

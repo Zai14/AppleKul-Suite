@@ -1,5 +1,5 @@
 /*
-  # Complete AppleKul Suite Database Schema
+  # Complete AppleKul™ Suite Database Schema
 
   1. New Tables
     - `profiles` - User profile information
@@ -426,7 +426,7 @@ BEGIN
   )
   VALUES (
     NEW.id,
-    'Welcome to AppleKul Suite!',
+    'Welcome to AppleKul™ Suite!',
     'Complete your profile and add your first orchard to get started.',
     'info'
   );

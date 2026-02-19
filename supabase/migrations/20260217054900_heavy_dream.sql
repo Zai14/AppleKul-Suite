@@ -1,5 +1,5 @@
 /*
-  # Seed Sample Data for AppleKul Suite
+  # Seed Sample Data for AppleKul™ Suite
 
   This migration adds sample data for demonstration purposes.
   It will only insert data if there are existing users in the system.
@@ -187,7 +187,7 @@ BEGIN
     read
   )
   VALUES
-    (v_user_id, 'Welcome to AppleKul Suite!', 'Your account has been set up successfully. Complete your profile to get personalized recommendations.', 'success', false),
+    (v_user_id, 'Welcome to AppleKul™ Suite!', 'Your account has been set up successfully. Complete your profile to get personalized recommendations.', 'success', false),
     (v_user_id, 'Weather Alert', 'Heavy rainfall expected in your area. Consider protective measures for your orchards.', 'warning', false),
     (v_user_id, 'Harvest Reminder', 'North Apple Orchard is ready for harvest based on growth stage analysis.', 'info', true),
     (v_user_id, 'Task Due Soon', 'Soil testing for East Experimental Plot is due in 2 days.', 'warning', false);
