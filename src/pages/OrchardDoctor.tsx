@@ -546,16 +546,29 @@ interface OrchardDoctorProps {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   MASTER DATA FIELDS (fallback for fieldId and orchardName if not provided as props)
+═══════════════════════════════════════════════════════════════════════════ */
+
+const FIELDS = [
+  { id: 'FIELD001', name: 'Demo Orchard 1' },
+  { id: 'FIELD002', name: 'Demo Orchard 2' },
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════════════════════════════ */
 
 export default function OrchardDoctor({
   growerName,
   growerPhone,
-  fieldId,
-  orchardName,
+  fieldId: propFieldId,
+  orchardName: propOrchardName,
   onExpenseLog,
 }: OrchardDoctorProps) {
+  // Fallback to master data if props are missing
+  const fieldId = propFieldId || (FIELDS.length > 0 ? FIELDS[0].id : '');
+  const orchardName = propOrchardName || (FIELDS.length > 0 ? FIELDS[0].name : '');
+
   /* ── Auth ── */
   const { user } = useAuth();
   const userId = user?.id ?? '';

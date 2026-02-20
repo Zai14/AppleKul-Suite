@@ -1178,8 +1178,8 @@ const getSprayBadge = (day: any) => {
             const field = fields.find(f => f.id === fieldId);
             orchardName = field ? field.name : '';
           }
-          // Only render if we have a valid fieldId and orchardName
-          if (fieldId && orchardName) {
+          // Only render if we have a valid fieldId
+          if (fieldId) {
             return (
               <div className="mt-8">
                 <OrchardDoctor
