@@ -11,6 +11,7 @@ import { AlertCircle, Droplet, Bug, CheckCircle, XCircle, HelpCircle } from 'luc
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // If you have a shared advisory data file, import skaustSprayTemplate2026 as default
 import { skaustSprayTemplate2026Chemicals } from '../data/skaustSprayTemplate2026';
+import OrchardDoctor from './OrchardDoctor';
 
 
 const Dashboard: React.FC = () => {
@@ -1165,6 +1166,32 @@ const getSprayBadge = (day: any) => {
               </div>
               <p className="text-gray-600">Production Chart</p>
               <p className="text-sm text-gray-500">Chart visualization would go here</p>
+        {/* OrchardDoctor Consultation Section */}
+        {(() => {
+          // Always provide a valid fieldId and orchardName to OrchardDoctor
+          let fieldId = selectedFieldId;
+          let orchardName = '';
+          if (!fieldId && fields.length > 0) {
+            fieldId = fields[0].id;
+          }
+          if (fieldId) {
+            const field = fields.find(f => f.id === fieldId);
+            orchardName = field ? field.name : '';
+          }
+          // Only render if we have a valid fieldId and orchardName
+          if (fieldId && orchardName) {
+            return (
+              <div className="mt-8">
+                <OrchardDoctor
+                  fieldId={fieldId}
+                  orchardName={orchardName}
+                />
+              </div>
+            );
+          }
+          // Optionally, show a message if no fields exist
+          return null;
+        })()}
             </div>
           </div>
         </Card>

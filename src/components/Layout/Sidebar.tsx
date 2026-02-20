@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, MapPin, LogOut, X, BookOpen } from 'lucide-react';
+import { LayoutDashboard, MapPin, LogOut, X, BookOpen, IndianRupee, Stethoscope } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
@@ -15,6 +15,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/fields', icon: MapPin, label: 'Fields' },
+    { path: '/finance', icon: IndianRupee, label: 'Financial Ledger' },
+     { path: '/orchard-doctor', icon: Stethoscope, label: 'Orchard Doctor' },
     { path: '/skuast-advisory', icon: BookOpen, label: 'SKUAST Advisory' },
     { path: '/soil-test-advisory', icon: BookOpen, label: 'Soil Test Advisory' },
   ];

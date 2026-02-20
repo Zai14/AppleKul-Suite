@@ -9,6 +9,8 @@ import Profile from './pages/Profile';
 import SkuastAdvisory from './pages/SkuastAdvisory';
 import SoilTestAdvisory from './pages/SoilTestAdvisory';
 import { useAuth } from './contexts/AuthContext';
+import FinancialLedger from './pages/FinancialLedger';
+import OrchardDoctor from './pages/OrchardDoctor';
 
 const RequireAuth = ({ children }: { children: ReactNode }) => {
   const { session, loading } = useAuth();
@@ -45,6 +47,8 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="fields" element={<Fields />} />
+          <Route path="finance" element={<FinancialLedger />} />
+          <Route path="orchard-doctor" element={<OrchardDoctor />} />
           <Route path="profile" element={<Profile />} />
           <Route path="skuast-advisory" element={<SkuastAdvisory />} />
           <Route path="soil-test-advisory" element={<SoilTestAdvisory />} />
