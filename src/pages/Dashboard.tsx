@@ -7,6 +7,12 @@ import type { User, Field } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 
+import { AlertCircle, Droplet, Bug, CheckCircle, XCircle, HelpCircle } from 'lucide-react';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+// If you have a shared advisory data file, import skaustSprayTemplate2026 as default
+import { skaustSprayTemplate2026Chemicals } from '../data/skaustSprayTemplate2026';
+
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,18 +32,18 @@ const Dashboard: React.FC = () => {
   const [forecast, setForecast] = useState<any[]>([]);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
-  const getWeatherIcon = (code: number) => {
-  if ([0].includes(code)) return "☀️";
-  if ([1, 2].includes(code)) return "🌤️";
-  if ([3].includes(code)) return "☁️";
-  if ([45, 48].includes(code)) return "🌫️";
-  if ([51, 53, 55].includes(code)) return "🌦️";
-  if ([61, 63, 65].includes(code)) return "🌧️";
-  if ([71, 73, 75].includes(code)) return "❄️";
-  if ([80, 81, 82].includes(code)) return "🌧️";
-  if ([95].includes(code)) return "⛈️";
-  return "🌡️";
-};
+
+  // --- Health RAG Matrix State ---
+  const [soilStatus, setSoilStatus] = useState<'green'|'yellow'|'red'|'gray'>('gray');
+  const [soilTooltip, setSoilTooltip] = useState('No recent soil test');
+  const [waterStatus, setWaterStatus] = useState<'green'|'yellow'|'red'|'gray'>('gray');
+  const [waterTooltip, setWaterTooltip] = useState('No recent water test');
+  const [pestStatus, setPestStatus] = useState<'green'|'yellow'|'red'|'gray'>('gray');
+  const [pestTooltip, setPestTooltip] = useState('No recent pest data');
+
+  // --- Smart Action Center State ---
+  const [smartActions, setSmartActions] = useState<any[]>([]);
+  // getWeatherIcon is unused
 // 🌧️ Heavy rain alert (>=10mm)
 // thresholds (you can tune these)
 const WIND_THRESHOLD = 15; // km/h
@@ -313,6 +319,69 @@ const getSprayBadge = (day: any) => {
 
     loadFields();
   }, [session?.user]);
+
+  // --- Health RAG Matrix Logic (Soil, Water, Pest) ---
+  useEffect(() => {
+    // Soil: fetch latest soil_test_results for user (simplified: just one field)
+    const fetchSoilStatus = async () => {
+      if (!session?.user) {
+        setSoilStatus('gray');
+        setSoilTooltip('No user');
+        return;
+      }
+      const { data, error } = await supabase
+        .from('soil_test_results')
+        .select('soil_ph, nitrogen, phosphorus, potassium, ec, recorded_date')
+        .eq('user_id', session.user.id)
+        .order('recorded_date', { ascending: false })
+        .limit(1);
+      if (error || !data || data.length === 0) {
+        setSoilStatus('gray');
+        setSoilTooltip('No recent soil test');
+        return;
+      }
+      const test = data[0];
+      // Use pH as a proxy for demo; real logic: check all nutrients
+      if (test.soil_ph == null) {
+        setSoilStatus('gray');
+        setSoilTooltip('No pH value');
+        return;
+      }
+      if (test.soil_ph < 6 || test.soil_ph > 7.5) {
+        setSoilStatus('red');
+        setSoilTooltip(`Soil pH out of range (${test.soil_ph})`);
+      } else {
+        setSoilStatus('green');
+        setSoilTooltip(`Soil pH optimal (${test.soil_ph})`);
+      }
+    };
+    fetchSoilStatus();
+    // Water: placeholder (gray)
+    setWaterStatus('gray');
+    setWaterTooltip('No water test data');
+    // Pest: placeholder (gray)
+    setPestStatus('gray');
+    setPestTooltip('No pest data');
+  }, [session?.user]);
+
+  // --- Smart Action Center Logic ---
+  useEffect(() => {
+    // Example: show SKUAST advisories, but hide spray if weather is RED for next 3 days
+    let actions: any[] = [];
+    if (Array.isArray(skaustSprayTemplate2026Chemicals)) {
+      actions = skaustSprayTemplate2026Chemicals.filter(item => {
+        // If item is a spray, check weather
+        if (item.target_pest && item.target_pest.toLowerCase().includes('scab')) {
+          // If any of next 3 days is RED, skip
+          if (forecast.slice(0, 3).some(day => getSprayWindowStatus(day) === 'RED')) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+    setSmartActions(actions.slice(0, 3)); // Show top 3
+  }, [forecast]);
 
   useEffect(() => {
     const loadTreeTags = async () => {
@@ -678,6 +747,61 @@ const getSprayBadge = (day: any) => {
 
   return (
     <div className="space-y-6">
+      {/* --- Health RAG Matrix --- */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <Card className="flex-1 flex flex-col items-center p-4 border-2 border-green-200 bg-linear-to-br from-green-50 to-green-100">
+          <div className="font-bold text-gray-700 mb-2">Health RAG Matrix</div>
+          <div className="flex gap-6">
+            {/* Soil Indicator */}
+            <div className="flex flex-col items-center">
+              <span
+                className={`w-12 h-12 rounded-full flex items-center justify-center border-4 shadow-md mb-1 ${soilStatus === 'green' ? 'border-green-500 bg-green-100' : soilStatus === 'yellow' ? 'border-yellow-400 bg-yellow-100' : soilStatus === 'red' ? 'border-red-500 bg-red-100' : 'border-gray-300 bg-gray-100'}`}
+                title={soilTooltip}
+              >
+                {soilStatus === 'green' && <CheckCircle className="w-7 h-7 text-green-600" />}
+                {soilStatus === 'yellow' && <AlertCircle className="w-7 h-7 text-yellow-500" />}
+                {soilStatus === 'red' && <XCircle className="w-7 h-7 text-red-600" />}
+                {soilStatus === 'gray' && <HelpCircle className="w-7 h-7 text-gray-400" />}
+              </span>
+              <span className="text-xs font-semibold text-green-900">Soil</span>
+            </div>
+            {/* Water Indicator */}
+            <div className="flex flex-col items-center">
+              <span
+                className={`w-12 h-12 rounded-full flex items-center justify-center border-4 shadow-md mb-1 ${waterStatus === 'green' ? 'border-green-500 bg-green-100' : waterStatus === 'yellow' ? 'border-yellow-400 bg-yellow-100' : waterStatus === 'red' ? 'border-red-500 bg-red-100' : 'border-gray-300 bg-gray-100'}`}
+                title={waterTooltip}
+              >
+                <Droplet className={`w-7 h-7 ${waterStatus === 'green' ? 'text-green-600' : waterStatus === 'yellow' ? 'text-yellow-500' : waterStatus === 'red' ? 'text-red-600' : 'text-gray-400'}`} />
+              </span>
+              <span className="text-xs font-semibold text-blue-900">Water</span>
+            </div>
+            {/* Pest Indicator */}
+            <div className="flex flex-col items-center">
+              <span
+                className={`w-12 h-12 rounded-full flex items-center justify-center border-4 shadow-md mb-1 ${pestStatus === 'green' ? 'border-green-500 bg-green-100' : pestStatus === 'yellow' ? 'border-yellow-400 bg-yellow-100' : pestStatus === 'red' ? 'border-red-500 bg-red-100' : 'border-gray-300 bg-gray-100'}`}
+                title={pestTooltip}
+              >
+                <Bug className={`w-7 h-7 ${pestStatus === 'green' ? 'text-green-600' : pestStatus === 'yellow' ? 'text-yellow-500' : pestStatus === 'red' ? 'text-red-600' : 'text-gray-400'}`} />
+              </span>
+              <span className="text-xs font-semibold text-red-900">Pest</span>
+            </div>
+          </div>
+        </Card>
+        {/* --- Smart Action Center --- */}
+        <Card className="flex-1 flex flex-col p-4 border-2 border-blue-200 bg-linear-to-br from-blue-50 to-blue-100">
+          <div className="font-bold text-gray-700 mb-2">Smart Action Center</div>
+          <ul className="space-y-2">
+            {smartActions.length === 0 && <li className="text-gray-500 text-sm">No prioritized actions right now.</li>}
+            {smartActions.map((action, idx) => (
+              <li key={idx} className="flex items-center gap-2 text-sm">
+                <AlertTriangle className="w-4 h-4 text-blue-500" />
+                <span className="font-semibold text-gray-800">{action.name}</span>
+                <span className="text-gray-500">{action.notes}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
